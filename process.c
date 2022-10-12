@@ -9,7 +9,6 @@
 #include <signal.h>
 #include <math.h>
 
-
 #define MAX_CHILDREN 3
 static int8_t numChildren;
 
@@ -63,7 +62,6 @@ bool getValidInput(double *start, double *end, size_t *numSteps, size_t *funcId)
 
 	// Read input numbers and place them in the given addresses:
 	size_t numRead = scanf("%lf %lf %zu %zu", start, end, numSteps, funcId);
-
 	// Return whether the given range is valid:
 	return (numRead == 4 && *end >= *start && *numSteps > 0 && *funcId < NUM_FUNCS);
 }
@@ -78,60 +76,34 @@ int main(void)
 	signal(SIGCHLD, signalHandler);
 	double rangeStart;
 	double rangeEnd;
-	int fd[2];
 	int child_status;
 	pid_t childPid;
 	size_t numSteps;
 	size_t funcId;
-	if (pipe(fd) == -1)
+	while ((getValidInput(&rangeStart, &rangeEnd, &numSteps, &funcId)))
 	{
-		printf("An Error occured opening the pipe\n");
-	}
-	while (1)
-	{
-
 		if ((childPid = fork()) < 0)
 		{
 			perror("fork");
 			exit(1);
 		}
+		numChildren++;
 
-		else if (childPid == 0)
+		if (childPid == 0)
 		{
-
-			close(fd[1]);
-			read(fd[0], &rangeStart, sizeof(double));
-			read(fd[0], &rangeEnd, sizeof(double));
-			read(fd[0], &numSteps, sizeof(size_t));
-			read(fd[0], &funcId, sizeof(size_t));
 			double area = integrateTrap(FUNCS[funcId], rangeStart, rangeEnd, numSteps);
 			printf("The integral of function %zu in range %g to %g is %.10g\n", funcId, rangeStart, rangeEnd, area);
-			close(fd[0]);
 			exit(0);
 		}
 		else
 		{
-			if (numChildren >= MAX_CHILDREN)
-			{
-				wait(NULL);
-			}
-			numChildren++;
-			if (getValidInput(&rangeStart, &rangeEnd, &numSteps, &funcId)){
-				close(fd[0]);
-				write(fd[1], &rangeStart, sizeof(double));
-				write(fd[1], &rangeEnd, sizeof(double));
-				write(fd[1], &numSteps, sizeof(size_t));
-				write(fd[1], &funcId, sizeof(size_t));
-//				printf("Input is %g %g %zu %zu \n", rangeStart, rangeEnd, numSteps, funcId);
-				close(fd[1]);
-				sleep(1);
-			}
-			else
-			{
-				while (wait(&child_status) > 0) {}
-				exit(0);
-			}
+			
+		if (numChildren >= MAX_CHILDREN)
+		{
+			wait(NULL);
+		}
 		}
 	}
+	while(wait(&child_status) > 0);
 	exit(0);
 }

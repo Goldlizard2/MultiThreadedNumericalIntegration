@@ -91,39 +91,28 @@ void signalHandler()
 	numChildren--;
 }
 
+
 int main(void)
 {
 	signal(SIGCHLD, signalHandler);
 	double rangeStart;
 	double rangeEnd;
-	int fd[2];
 	int child_status;
 	pid_t childPid;
 	size_t numSteps;
 	size_t funcId;
 	pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
-
-	if (pipe(fd) == -1)
+	while ((getValidInput(&rangeStart, &rangeEnd, &numSteps, &funcId)))
 	{
-		printf("An Error occured opening the pipe\n");
-	}
-	while (1)
-	{
-
 		if ((childPid = fork()) < 0)
 		{
 			perror("fork");
 			exit(1);
 		}
+		numChildren++;
 
-		else if (childPid == 0)
+		if (childPid == 0)
 		{
-
-			close(fd[1]);
-			read(fd[0], &rangeStart, sizeof(double));
-			read(fd[0], &rangeEnd, sizeof(double));
-			read(fd[0], &numSteps, sizeof(size_t));
-			read(fd[0], &funcId, sizeof(size_t));
 			double integrationSum = 0;
 			ThreadDetails threadetails[NUMBER_OF_THREADS];
 			pthread_t threads[NUMBER_OF_THREADS];
@@ -149,34 +138,17 @@ int main(void)
 				pthread_join(threads[j], NULL);
 			}
 			printf("The integral of function %zu in range %g to %g is %.10g\n", funcId, rangeStart, rangeEnd, integrationSum);
-			close(fd[0]);
-			exit(0);
+			
 		}
 		else
 		{
-			if (numChildren >= MAX_CHILDREN)
-			{
-				wait(NULL);
-			}
-			numChildren++;
-			if (getValidInput(&rangeStart, &rangeEnd, &numSteps, &funcId))
-			{
-				close(fd[0]);
-				write(fd[1], &rangeStart, sizeof(double));
-				write(fd[1], &rangeEnd, sizeof(double));
-				write(fd[1], &numSteps, sizeof(size_t));
-				write(fd[1], &funcId, sizeof(size_t));
-				close(fd[1]);
-				sleep(1);
-			}
-			else
-			{
-				while (wait(&child_status) > 0)
-				{
-				}
-				exit(0);
-			}
+			
+		if (numChildren >= MAX_CHILDREN)
+		{
+			wait(NULL);
+		}
 		}
 	}
+	while(wait(&child_status) > 0);
 	exit(0);
 }
