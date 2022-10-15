@@ -10,12 +10,14 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <signal.h>
+#include <time.h>
 
 #define MAX_CHILDREN 5
-#define NUMBER_OF_THREADS 4
+#define NUMBER_OF_THREADS 32
 
-static int8_t numChildren;
+static int8_t numChildren = 0;
 typedef double MathFunc_t(double);
+
 
 typedef struct ThreadDetails
 {
@@ -82,7 +84,7 @@ bool getValidInput(double *start, double *end, size_t *numSteps, size_t *funcId)
 
 	// Read input numbers and place them in the given addresses:
 	size_t numRead = scanf("%lf %lf %zu %zu", start, end, numSteps, funcId);
-
+	fflush(stdin);
 	// Return whether the given range is valid:
 	return (numRead == 4 && *end >= *start && *numSteps > 0 && *funcId < NUM_FUNCS);
 }
@@ -91,6 +93,10 @@ void signalHandler()
 	numChildren--;
 }
 
+double seconds(struct timespec start, struct timespec stop) {
+  double diff = (stop.tv_sec - start.tv_sec) + (double)(stop.tv_nsec - start.tv_nsec) / (double)1e9;
+  return diff;
+}
 
 int main(void)
 {
@@ -102,17 +108,20 @@ int main(void)
 	size_t numSteps;
 	size_t funcId;
 	pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+
 	while ((getValidInput(&rangeStart, &rangeEnd, &numSteps, &funcId)))
 	{
+		
+		
 		if ((childPid = fork()) < 0)
 		{
 			perror("fork");
 			exit(1);
 		}
 		numChildren++;
-
 		if (childPid == 0)
 		{
+			
 			double integrationSum = 0;
 			ThreadDetails threadetails[NUMBER_OF_THREADS];
 			pthread_t threads[NUMBER_OF_THREADS];
@@ -129,16 +138,17 @@ int main(void)
 				threadetails[i].rangeEnd = integrationBounds;
 				threadetails[i].numSlices = slicesPerThread;
 				threadetails[i].lock = &lock;
-
-				pthread_create(&threads[i], NULL, integrateTrap, &threadetails[i]);
 			}
+			for (int thread_num = 0; thread_num < NUMBER_OF_THREADS; thread_num++){
+				pthread_create(&threads[thread_num], NULL, integrateTrap, &threadetails[thread_num]);
+			} 
 
 			for (int j = 0; j < NUMBER_OF_THREADS; j++)
 			{
 				pthread_join(threads[j], NULL);
 			}
 			printf("The integral of function %zu in range %g to %g is %.10g\n", funcId, rangeStart, rangeEnd, integrationSum);
-			
+			exit(0);
 		}
 		else
 		{

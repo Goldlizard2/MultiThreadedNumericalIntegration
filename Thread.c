@@ -2,11 +2,13 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <math.h>
 #include <pthread.h>
+#include <time.h>
 
-#define NUMBER_OF_THREADS 10
+#define NUMBER_OF_THREADS 16
 
 typedef double MathFunc_t(double);
 
@@ -21,6 +23,7 @@ typedef struct ThreadDetails
 	pthread_mutex_t *lock;
 
 } ThreadDetails;
+
 
 double gaussian(double x)
 {
@@ -75,14 +78,17 @@ bool getValidInput(double *start, double *end, size_t *numSteps, size_t *funcId)
 
 	// Read input numbers and place them in the given addresses:
 	size_t numRead = scanf("%lf %lf %zu %zu", start, end, numSteps, funcId);
-
 	// Return whether the given range is valid:
 	return (numRead == 4 && *end >= *start && *numSteps > 0 && *funcId < NUM_FUNCS);
 }
 
+double seconds(struct timespec start, struct timespec stop) {
+  double diff = (stop.tv_sec - start.tv_sec) + (double)(stop.tv_nsec - start.tv_nsec) / (double)1e9;
+  return diff;
+}
+
 int main(void)
 {
-
 	double rangeStart;
 	double rangeEnd;
 	size_t numSteps;
@@ -91,6 +97,8 @@ int main(void)
 
 	while (getValidInput(&rangeStart, &rangeEnd, &numSteps, &funcId))
 	{
+		fflush(stdin);
+		
 		double integrationSum = 0;
 		ThreadDetails threadetails[NUMBER_OF_THREADS];
 		pthread_t threads[NUMBER_OF_THREADS];
@@ -118,6 +126,6 @@ int main(void)
 
 		printf("The integral of function %zu in range %g to %g is %.10g\n", funcId, rangeStart, rangeEnd, integrationSum);
 	}
-
+	
 	exit(0);
 }

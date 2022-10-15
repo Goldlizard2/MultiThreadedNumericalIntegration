@@ -8,11 +8,12 @@
 #include <unistd.h>
 #include <signal.h>
 #include <math.h>
+#include <time.h>
 
-#define MAX_CHILDREN 3
+#define MAX_CHILDREN 5
 static int8_t numChildren;
-
 typedef double MathFunc_t(double);
+
 
 double gaussian(double x)
 {
@@ -62,6 +63,7 @@ bool getValidInput(double *start, double *end, size_t *numSteps, size_t *funcId)
 
 	// Read input numbers and place them in the given addresses:
 	size_t numRead = scanf("%lf %lf %zu %zu", start, end, numSteps, funcId);
+	fflush(stdin);
 	// Return whether the given range is valid:
 	return (numRead == 4 && *end >= *start && *numSteps > 0 && *funcId < NUM_FUNCS);
 }
@@ -69,6 +71,11 @@ bool getValidInput(double *start, double *end, size_t *numSteps, size_t *funcId)
 void signalHandler()
 {
 	numChildren--;
+}
+
+double seconds(struct timespec start, struct timespec stop) {
+  double diff = (stop.tv_sec - start.tv_sec) + (double)(stop.tv_nsec - start.tv_nsec) / (double)1e9;
+  return diff;
 }
 
 int main(void)
@@ -80,6 +87,7 @@ int main(void)
 	pid_t childPid;
 	size_t numSteps;
 	size_t funcId;
+
 	while ((getValidInput(&rangeStart, &rangeEnd, &numSteps, &funcId)))
 	{
 		if ((childPid = fork()) < 0)
