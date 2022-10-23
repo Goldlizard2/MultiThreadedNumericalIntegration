@@ -12,8 +12,8 @@
 #include <signal.h>
 #include <time.h>
 
-#define MAX_CHILDREN 5
-#define NUMBER_OF_THREADS 32
+#define MAX_CHILDREN 12	
+#define NUMBER_OF_THREADS 64
 
 static int8_t numChildren = 0;
 typedef double MathFunc_t(double);

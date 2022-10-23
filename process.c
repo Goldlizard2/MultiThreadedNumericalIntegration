@@ -10,7 +10,7 @@
 #include <math.h>
 #include <time.h>
 
-#define MAX_CHILDREN 5
+#define MAX_CHILDREN 16
 static int8_t numChildren;
 typedef double MathFunc_t(double);
 
