@@ -129,6 +129,8 @@ int main(void)
 			double rangeinc = (rangeEnd - rangeStart) / NUMBER_OF_THREADS;
 			
 			double integrationBounds = rangeStart;
+			
+			//set up the struct with the details for each thread
 			for (int i = 0; i < NUMBER_OF_THREADS; i++)
 			{
 				threadetails[i].integrationSum = &integrationSum;
@@ -159,6 +161,6 @@ int main(void)
 		}
 		}
 	}
-	while(wait(&child_status) > 0);
+	while(wait(&child_status) > 0); // wait for all children to finish before exiting
 	exit(0);
 }

@@ -106,6 +106,7 @@ int main(void)
 		double rangeinc = (rangeEnd - rangeStart) / NUMBER_OF_THREADS;
 
 		double integrationBounds = rangeStart;
+		//set up the struct with the details for each thread
 		for (int i = 0; i < NUMBER_OF_THREADS; i++)
 		{
 			threadetails[i].integrationSum = &integrationSum;

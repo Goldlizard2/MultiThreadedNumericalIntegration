@@ -68,9 +68,11 @@ bool getValidInput(double *start, double *end, size_t *numSteps, size_t *funcId)
 	return (numRead == 4 && *end >= *start && *numSteps > 0 && *funcId < NUM_FUNCS);
 }
 
+//decrease number of children when child exits SIGCHILD signal
 void signalHandler()
 {
 	numChildren--;
+
 }
 
 double seconds(struct timespec start, struct timespec stop) {
@@ -112,6 +114,6 @@ int main(void)
 		}
 		}
 	}
-	while(wait(&child_status) > 0);
+	while(wait(&child_status) > 0); // wait for all children to finish before exiting
 	exit(0);
 }
